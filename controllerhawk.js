@@ -144,6 +144,24 @@ function () {
   return Keybind;
 }();
 
+var Options =
+/**
+ * Indicates if Controllerhawk should not use its internal game loop for updating the controller values.
+ * 
+ * @default true
+ */
+
+/**
+ * @param {Object} options The initialization options passed to Controllerhawk.
+ */
+function Options(options) {
+  _classCallCheck(this, Options);
+
+  _defineProperty(this, "disableGameLoop", false);
+
+  Object.assign(this, options);
+};
+
 /**
  * Maps the standard gamepad to a PS4 controller.
  * 
@@ -198,10 +216,36 @@ var xbox = {
 };
 
 /**
+ * Maps the standard gamepad to a generic controller.
+ * 
+ * https://www.w3.org/TR/gamepad/#remapping
+ */
+
+var generic = {
+  QUAD_BUTTON_BOTTOM: 0,
+  QUAD_BUTTON_RIGHT: 1,
+  QUAD_BUTTON_LEFT: 2,
+  QUAD_BUTTON_TOP: 3,
+  LEFT_BUMPER: 4,
+  RIGHT_BUMPER: 5,
+  LEFT_TRIGGER: 6,
+  RIGHT_TRIGGER: 7,
+  SELECT: 8,
+  START: 9,
+  LEFT_ANALOG: 10,
+  RIGHT_ANALOG: 11,
+  DPAD_UP: 12,
+  DPAD_BOTTOM: 13,
+  DPAD_LEFT: 14,
+  DPAD_RIGHT: 15,
+  MIDDLE: 16
+};
+
+/**
  * Imports all of the individual mappings and provides a way to access any supported controller layout.
  */
 
-var controllers = {
+var mapping = {
   /**
    * The layout for the ps4 controller.
    */
@@ -210,16 +254,28 @@ var controllers = {
   /**
    * The layout for the general xbox/xbox360 controller.
    */
-  XBOX: xbox
+  XBOX: xbox,
+
+  /**
+   * The layout for a generic controller.
+   */
+  GENERIC: generic
 };
 
 /**
- * Makes it easy for you to map controllers for your game.
+ * The controller/gamepad version of keyhawk, manage your game's keybinds for users using a controller.
  */
-
 var ControllerHawk =
 /*#__PURE__*/
 function () {
+  /**
+   * A reference to the options passed to Controllerhawk.
+   * 
+   * @private
+   * 
+   * @property {Options}
+   */
+
   /**
    * A reference to the controllers connected.
    * 
@@ -233,7 +289,7 @@ function () {
    * 
    * @private
    * 
-   * @property {controllers}
+   * @property {Object}
    */
 
   /**
@@ -249,18 +305,53 @@ function () {
    * 
    * @private
    * 
-   * @property {*}
+   * @property {Pressed}
    */
-  function ControllerHawk() {
+
+  /**
+   * The values of the left analog stick.
+   * 
+   * @private
+   * 
+   * @property {AnalogStick}
+   */
+
+  /**
+   * The values of the right analog stick.
+   * 
+   * @private
+   * 
+   * @property {AnalogStick}
+   */
+
+  /**
+   * @param {Object} [options]
+   * @param {boolean} [options.disableGameLoop=false] Indicates if Controllerhawk should not use its internal game loop for updating the controller values.
+   */
+  function ControllerHawk(options) {
     _classCallCheck(this, ControllerHawk);
+
+    _defineProperty(this, "_options", void 0);
 
     _defineProperty(this, "_controllers", {});
 
-    _defineProperty(this, "_BUTTONS", controllers);
+    _defineProperty(this, "_BUTTONS", mapping);
 
     _defineProperty(this, "_keybinds", []);
 
     _defineProperty(this, "_pressed", {});
+
+    _defineProperty(this, "_leftAnalogStick", {
+      x: 0,
+      y: 0
+    });
+
+    _defineProperty(this, "_rightAnalogStick", {
+      x: 0,
+      y: 0
+    });
+
+    this._options = new Options(options);
 
     this._boot();
   }
@@ -298,6 +389,17 @@ function () {
       return keybind;
     }
     /**
+     * Checks to see if any keybinds are active and runs them.
+     * 
+     * @param {number} time The time passed from the game clock.
+     */
+
+  }, {
+    key: "update",
+    value: function update(time) {
+      this._update(time);
+    }
+    /**
      * Adds the necessary event listeners detecting a gamepad connecting and disconnecting.
      * 
      * @private
@@ -328,8 +430,7 @@ function () {
     key: "_onconnect",
     value: function _onconnect(gamepad) {
       this._controllers[gamepad.index] = gamepad;
-
-      this._update(0);
+      if (!this._options.disableGameLoop) this._update(0);
     }
     /**
      * Removes the disconnected controller from the `_controllers` property.
@@ -361,6 +462,25 @@ function () {
 
       this._updatePressed();
 
+      this._checkKeybinds(time);
+
+      requestAnimationFrame(function (time) {
+        return _this2._update(time);
+      });
+    }
+    /**
+     * Checks for active keybinds and runs them.
+     * 
+     * @param {number} time The time passed from the game clock.
+     * 
+     * @private
+     */
+
+  }, {
+    key: "_checkKeybinds",
+    value: function _checkKeybinds(time) {
+      var _this3 = this;
+
       this._keybinds.map(function (keybind) {
         var _iteratorNormalCompletion = true;
         var _didIteratorError = false;
@@ -369,7 +489,7 @@ function () {
         try {
           for (var _iterator = keybind.buttons[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
             var button = _step.value;
-            if (!_this2._pressed[button]) return;
+            if (!_this3._pressed[button]) return;
           }
         } catch (err) {
           _didIteratorError = true;
@@ -388,10 +508,6 @@ function () {
 
         keybind.run(time);
       });
-
-      requestAnimationFrame(function (time) {
-        return _this2._update(time);
-      });
     }
     /**
      * Updates the status of what buttons are pressed.
@@ -409,6 +525,16 @@ function () {
           var button = controller.buttons[i];
           if (button.pressed) this._pressed[i] = true;else this._pressed[i] = false;
         }
+
+        var axes = controller.axes;
+        this._leftAnalogStick = {
+          x: axes[0],
+          y: axes[1]
+        };
+        this._rightAnalogStick = {
+          x: axes[2],
+          y: axes[3]
+        };
       }
     }
     /**
@@ -420,18 +546,40 @@ function () {
   }, {
     key: "_scan",
     value: function _scan() {
-      var _this3 = this;
+      var _this4 = this;
 
       var gamepads = navigator.getGamepads();
       gamepads.map(function (gamepad) {
         if (!gamepad) return;
-        if (!(gamepad.index in _this3._controllers)) _this3._onconnect(gamepad);else _this3._controllers[gamepad.index] = gamepad;
+        if (!(gamepad.index in _this4._controllers)) _this4._onconnect(gamepad);else _this4._controllers[gamepad.index] = gamepad;
       });
     }
   }, {
     key: "BUTTONS",
     get: function get() {
       return this._BUTTONS;
+    }
+    /**
+     * Returns the values of the left analog stick.
+     * 
+     * @returns {AnalogStick}
+     */
+
+  }, {
+    key: "leftAnalogStick",
+    get: function get() {
+      return this._leftAnalogStick;
+    }
+    /**
+     * Returns the values of the right analog stick.
+     * 
+     * @returns {AnalogStick}
+     */
+
+  }, {
+    key: "rightAnalogStick",
+    get: function get() {
+      return this._rightAnalogStick;
     }
   }]);
 

@@ -1,12 +1,26 @@
 'use strict'
 
 import Keybind from './keybind/Keybind';
-import controllers from './mapping/controllers';
+import Options from './options/Options';
+import mapping from './mapping/mapping';
+
+import Pressed from './interfaces/Pressed';
+import Controllers from './interfaces/Controllers';
+import AnalogStick from './interfaces/AnalogStick';
 
 /**
- * Makes it easy for you to map controllers for your game.
+ * The controller/gamepad version of keyhawk, manage your game's keybinds for users using a controller.
  */
 export default class ControllerHawk {
+  /**
+   * A reference to the options passed to Controllerhawk.
+   * 
+   * @private
+   * 
+   * @property {Options}
+   */
+  private _options: Options;
+
   /**
    * A reference to the controllers connected.
    * 
@@ -14,16 +28,16 @@ export default class ControllerHawk {
    * 
    * @property {Controllers}
    */
-  private _controllers: any = {};
+  private _controllers: Controllers = {};
 
   /**
    * A reference to the controllers and their buttons that can be used in keybinds.
    * 
    * @private
    * 
-   * @property {controllers}
+   * @property {Object}
    */
-  private _BUTTONS: any = controllers;
+  private _BUTTONS: Object = mapping;
 
   /**
    * A reference to all of the keybinds that have been created.
@@ -39,11 +53,35 @@ export default class ControllerHawk {
    * 
    * @private
    * 
-   * @property {*}
+   * @property {Pressed}
    */
-  private _pressed: any = {};
+  private _pressed: Pressed = {};
 
-  constructor() {
+  /**
+   * The values of the left analog stick.
+   * 
+   * @private
+   * 
+   * @property {AnalogStick}
+   */
+  private _leftAnalogStick: AnalogStick = { x: 0, y: 0 };
+
+  /**
+   * The values of the right analog stick.
+   * 
+   * @private
+   * 
+   * @property {AnalogStick}
+   */
+  private _rightAnalogStick: AnalogStick = { x: 0, y: 0 };
+
+  /**
+   * @param {Object} [options]
+   * @param {boolean} [options.disableGameLoop=false] Indicates if Controllerhawk should not use its internal game loop for updating the controller values.
+   */
+  constructor(options: Object) {
+    this._options = new Options(options);
+    
     this._boot();
   }
 
@@ -53,6 +91,20 @@ export default class ControllerHawk {
    * @returns {controller}
    */
   get BUTTONS() { return this._BUTTONS; }
+
+  /**
+   * Returns the values of the left analog stick.
+   * 
+   * @returns {AnalogStick}
+   */
+  get leftAnalogStick(): AnalogStick { return this._leftAnalogStick; }
+
+  /**
+   * Returns the values of the right analog stick.
+   * 
+   * @returns {AnalogStick}
+   */
+  get rightAnalogStick(): AnalogStick { return this._rightAnalogStick; }
 
   /**
    * Creates a new keybind with the specified buttons on a supported controller layout.
@@ -72,6 +124,15 @@ export default class ControllerHawk {
     this._keybinds.push(keybind);
 
     return keybind;
+  }
+
+  /**
+   * Checks to see if any keybinds are active and runs them.
+   * 
+   * @param {number} time The time passed from the game clock.
+   */
+  update(time: number) {
+    this._update(time);
   }
 
   /**
@@ -95,7 +156,7 @@ export default class ControllerHawk {
   private _onconnect(gamepad: Gamepad) {
     this._controllers[gamepad.index] = gamepad;
 
-    this._update(0);
+    if (!this._options.disableGameLoop) this._update(0);
   }
 
   /**
@@ -121,6 +182,19 @@ export default class ControllerHawk {
 
     this._updatePressed();
 
+    this._checkKeybinds(time);
+
+    requestAnimationFrame((time: number) => this._update(time));
+  }
+
+  /**
+   * Checks for active keybinds and runs them.
+   * 
+   * @param {number} time The time passed from the game clock.
+   * 
+   * @private
+   */
+  private _checkKeybinds(time: number) {
     this._keybinds.map((keybind: Keybind) => {
 
       for (let button of keybind.buttons) {
@@ -129,8 +203,6 @@ export default class ControllerHawk {
 
       keybind.run(time);
     });
-
-    requestAnimationFrame((time: number) => this._update(time));
   }
 
   /**
@@ -140,7 +212,7 @@ export default class ControllerHawk {
    */
   private _updatePressed() {
     for (const c in this._controllers) {
-      const controller: any = this._controllers[c];
+      const controller: Gamepad = this._controllers[c];
 
       for (let i: number = 0; i < controller.buttons.length; ++i) {
         const button: GamepadButton = controller.buttons[i];
@@ -148,6 +220,11 @@ export default class ControllerHawk {
         if (button.pressed) this._pressed[i] = true;
         else this._pressed[i] = false;
       }
+
+      const axes: readonly number[] = controller.axes;
+
+      this._leftAnalogStick = { x: axes[0], y: axes[1] };
+      this._rightAnalogStick = { x: axes[2], y: axes[3] };
     }
   }
 
