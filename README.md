@@ -65,7 +65,7 @@ The keys that can be assigned to a keybind should be derived from the `controlle
 
 **Note:** The when selecting buttons to assign to a keybind, the `instance.BUTTONS` property has three properties of its own, `PS4`, `XBOX` and `GENERIC`. These are more of a convenience so that you can imagine the keybinds better but they will match up with similar buttons on any controller. Here is what the generic gamepad looks like and which all controller layouts will be mapped to:
 
-<img width="500" height="375" src="./images/standard_gamepad.svg">
+<img width="500" height="375" src="https://raw.githubusercontent.com/robertcorponoi/graphics/master/controllerhawk/standard-gamepad.png">
 
 Now let's say we have a basic keybind
 

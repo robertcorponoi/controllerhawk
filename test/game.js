@@ -29,13 +29,13 @@ const game = new Phaser.Game(800, 600, Phaser.CANVAS, 'phaser-example', { preloa
  * Define all of the assets that need to be loaded before the game starts.
  */
 function preload() {
-  game.load.tilemap('level1', 'assets/level1.json', null, Phaser.Tilemap.TILED_JSON);
-  game.load.image('tiles-1', 'assets/tiles-1.png');
-  game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
-  game.load.spritesheet('droid', 'assets/droid.png', 32, 32);
-  game.load.image('starSmall', 'assets/star.png');
-  game.load.image('starBig', 'assets/star2.png');
-  game.load.image('background', 'assets/background2.png');
+  game.load.tilemap('level1', 'https://raw.githubusercontent.com/robertcorponoi/graphics/master/controllerhawk/test-assets/level1.json', null, Phaser.Tilemap.TILED_JSON);
+  game.load.image('tiles-1', 'https://raw.githubusercontent.com/robertcorponoi/graphics/master/controllerhawk/test-assets/tiles-1.png');
+  game.load.spritesheet('dude', 'https://raw.githubusercontent.com/robertcorponoi/graphics/master/controllerhawk/test-assets/dude.png', 32, 48);
+  game.load.spritesheet('droid', 'https://raw.githubusercontent.com/robertcorponoi/graphics/master/controllerhawk/test-assets/droid.png', 32, 32);
+  game.load.image('starSmall', 'https://raw.githubusercontent.com/robertcorponoi/graphics/master/controllerhawk/test-assets/star.png');
+  game.load.image('starBig', 'https://raw.githubusercontent.com/robertcorponoi/graphics/master/controllerhawk/test-assets/star2.png');
+  game.load.image('background', 'https://raw.githubusercontent.com/robertcorponoi/graphics/master/controllerhawk/test-assets/background.png');
 }
 
 /**
