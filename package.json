@@ -1,7 +1,7 @@
 {
   "name": "controllerhawk",
   "version": "0.1.0",
-  "description": "The gamepad version of keyhawk, manage your game's users using a controller.",
+  "description": "The gamepad version of keyhawk, manage your game's keybinds for users using a controller.",
   "main": "index.js",
   "scripts": {
     "tsconfig": "tsc --init --declaration --allowSyntheticDefaultImports --target esnext --outDir lib",
