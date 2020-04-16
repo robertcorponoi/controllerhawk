@@ -1,3 +1,6 @@
+## 0.1.1 / 2020-04-16
+- [MISC] Updated out-of-date dependencies to their latest versions which also fixed all possible fixed security vulnerabilities.
+
 ## 0.1.0 / 2020-02-21
 - Initial release.
 
